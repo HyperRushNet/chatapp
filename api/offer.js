@@ -7,6 +7,23 @@ const db = new sqlite3.Database('./db/chatapp.db', sqlite3.OPEN_READWRITE, (err)
   }
 });
 
+// Functie om oude berichten (ouder dan 7 dagen) te verwijderen
+function deleteOldMessages() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 dagen geleden
+  const deleteQuery = "DELETE FROM signals WHERE timestamp < ?";
+
+  db.run(deleteQuery, [sevenDaysAgo], function(err) {
+    if (err) {
+      console.error('Fout bij het verwijderen van oude berichten:', err.message);
+    } else {
+      console.log(`${this.changes} oude berichten verwijderd.`);
+    }
+  });
+}
+
+// Roep de deleteOldMessages functie aan om oude berichten te verwijderen bij elke request
+deleteOldMessages();
+
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { peerId, data } = req.body;
