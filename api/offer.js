@@ -12,20 +12,20 @@ export default async function handler(req, res) {
     const { peerId, data } = req.body;
     const timestamp = new Date().toLocaleTimeString();
 
-    // Sla het signaal op in de database
     const stmt = db.prepare("INSERT INTO signals (peerId, type, message, timestamp) VALUES (?, ?, ?, ?)");
     stmt.run(peerId, data.type, data.message, timestamp, function(err) {
       if (err) {
         return res.status(500).json({ error: 'Error storing signal in database' });
       }
-
+      // Zorg ervoor dat je de database sluit na de operatie
+      stmt.finalize();  // sluit de statement
+      db.close();  // sluit de databaseverbinding
       res.status(200).json({
         message: 'Signal received and stored',
         peerId,
-        id: this.lastID, // Retourneer de ID van het opgeslagen record
+        id: this.lastID,
       });
     });
-    stmt.finalize();
   } else if (req.method === 'GET') {
     const { peerId } = req.query;
 
@@ -39,6 +39,7 @@ export default async function handler(req, res) {
       } else {
         res.status(200).json({ message: 'No signal found for this peer' });
       }
+      db.close();  // Sluit de database na het ophalen van gegevens
     });
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
