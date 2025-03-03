@@ -2,42 +2,48 @@ const sendMessageButton = document.getElementById('sendMessageBtn');
 const messageInput = document.getElementById('messageInput');
 const messagesDiv = document.getElementById('messages');
 
-// Initialize a new WebRTC peer connection
+// Peer-to-peer variables
 let localConnection;
 let sendChannel;
+let peerId = Date.now(); // Unique ID for this peer
 
-// Create an RTCDataChannel for sending messages
+// Create WebRTC connection
 function createConnection() {
   localConnection = new RTCPeerConnection();
   sendChannel = localConnection.createDataChannel("sendDataChannel");
-  
-  // Setup event for when a message is received on the peer connection
+
   sendChannel.onmessage = (event) => {
-    const message = event.data;
-    displayMessage(`Peer: ${message}`);
+    displayMessage(`Peer: ${event.data}`);
   };
 
-  // Create offer and set local description
   localConnection.createOffer()
     .then(offer => {
       return localConnection.setLocalDescription(offer);
     })
     .then(() => {
-      // Send offer via signaling (you'd typically send this offer to another peer over a signaling server)
-      // For demo purposes, we're just simulating the signaling process
-      console.log("Sending offer", localConnection.localDescription);
+      return fetch('/api/signal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'offer',
+          sdp: localConnection.localDescription.sdp,
+          id: peerId
+        }),
+      });
     })
-    .catch(error => console.error("Error creating offer: ", error));
+    .catch(error => console.error('Error creating offer:', error));
 }
 
-// Display messages in the chat window
+// Display message in the chat window
 function displayMessage(message) {
   const messageDiv = document.createElement('div');
   messageDiv.textContent = message;
   messagesDiv.appendChild(messageDiv);
 }
 
-// Send a message to the peer
+// Send message to the peer
 sendMessageButton.onclick = () => {
   const message = messageInput.value;
   if (message) {
@@ -47,5 +53,42 @@ sendMessageButton.onclick = () => {
   }
 };
 
-// Initialize connection
-createConnection();
+// Retrieve offer or answer from the signaling server
+function getOfferOrAnswer(type) {
+  return fetch(`/api/signal?type=${type}&id=${peerId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.sdp) {
+        return new RTCSessionDescription({ type, sdp: data.sdp });
+      } else {
+        throw new Error('SDP not found');
+      }
+    });
+}
+
+// Receive and set remote description
+function receiveOffer() {
+  getOfferOrAnswer('offer').then(offerDescription => {
+    localConnection.setRemoteDescription(offerDescription)
+      .then(() => localConnection.createAnswer())
+      .then(answer => {
+        return localConnection.setLocalDescription(answer);
+      })
+      .then(() => {
+        return fetch('/api/signal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'answer',
+            sdp: localConnection.localDescription.sdp,
+            id: peerId
+          }),
+        });
+      })
+      .catch(error => console.error('Error receiving offer:', error));
+}
+
+// Call the function to receive offer if peer sends one
+receiveOffer(); // This should be triggered in the right order based on your flow
