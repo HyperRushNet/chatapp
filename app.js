@@ -1,13 +1,28 @@
-let localPort = window.location.port;  // local port
-let peerPort = "4000";  // specify the port of the peer you want to send to
+let localPort = null;  // Dynamische poort die we krijgen van de server
+let userId = null;  // Unieke gebruikers-ID
 
-// Function to send message
+// Haal de dynamische poort en ID op van de server bij het laden van de pagina
+window.onload = () => {
+    fetch('/api/signal', {
+        method: 'GET',
+    })
+    .then(response => response.json())
+    .then(data => {
+        localPort = data.port;
+        userId = data.userId;
+        console.log(`Your port is ${localPort} and your user ID is ${userId}`);
+    })
+    .catch(error => console.error('Error fetching port:', error));
+};
+
+// Functie om een bericht te versturen
 function sendMessage() {
     const message = document.getElementById("messageInput").value;
-    const prefix = `${localPort}-${peerPort}`;  // Prefix with sender and receiver ports
+    const peerId = prompt("Enter the user ID of the person you want to send a message to:");
+    const prefix = `${localPort}-${peerId}`;  // Prefix met de poort van de verzender en ontvanger
     const messageWithPrefix = `${prefix}: ${message}`;
 
-    // Send the message via fetch to the server
+    // Verstuur het bericht naar de server
     fetch("/api/signal", {
         method: "POST",
         headers: {
@@ -15,8 +30,8 @@ function sendMessage() {
         },
         body: JSON.stringify({
             message: messageWithPrefix,
-            from: localPort,
-            to: peerPort,
+            from: userId,
+            to: peerId,
         }),
     })
     .then(response => response.json())
@@ -29,7 +44,7 @@ function sendMessage() {
     });
 }
 
-// Display message on screen
+// Toon het bericht op het scherm
 function displayMessage(message) {
     const messageElement = document.createElement("div");
     messageElement.textContent = message;
