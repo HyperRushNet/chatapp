@@ -1,28 +1,22 @@
-// api/offer.js
+// /api/offer.js
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { peerId, data } = req.body;
+    const { peerId, signal } = req.body; // De signalen die je van de client ontvangt
 
-    if (data.type === 'offer') {
-      // Ontvang de offer en bewaar het in je backend (in-memory of een database)
-      // Hier zou je bijvoorbeeld de SDP kunnen opslaan en naar andere peers sturen
+    try {
+      // Hier kun je de logica implementeren om het signaal naar de juiste peer door te sturen
+      console.log('Received signal:', peerId, signal);
 
-      console.log('Received offer:', data.sdp);
-      
-      // Hier kun je de response sturen naar de peer
-      res.status(200).json({
-        message: 'Offer received and processed',
-        peerId,
-        sdp: 'SDP response here',
-      });
-    } else if (data.type === 'candidate') {
-      // Verwerk de ICE candidate en stuur deze door naar andere peers
-      console.log('Received candidate:', data.candidate);
-      res.status(200).json({ message: 'Candidate processed' });
-    } else {
-      res.status(400).json({ message: 'Invalid data type' });
+      // Bijvoorbeeld, sla de signalen tijdelijk op of gebruik websockets om ze door te sturen naar de juiste peer
+      // Dit is een voorbeeld en kan worden aangepast aan je specifieke implementatie
+
+      res.status(200).json({ message: 'Signal received successfully', signal });
+    } catch (error) {
+      console.error('Error processing offer:', error);
+      res.status(500).json({ message: 'Error processing signal', error });
     }
   } else {
+    // Als de request niet een POST is, geef dan 405 Method Not Allowed
     res.status(405).json({ message: 'Method Not Allowed' });
   }
 }
