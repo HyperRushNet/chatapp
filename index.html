@@ -1,104 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peer-to-Peer Chat</title>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    #chat { width: 300px; height: 400px; border: 1px solid #ddd; overflow-y: auto; }
-    #input { width: 100%; }
-    #message { margin: 10px 0; }
-  </style>
-</head>
-<body>
-  <h1>Peer-to-Peer Chat</h1>
-  <div id="chat"></div>
-  <input type="text" id="input" placeholder="Type a message..." />
-  <button onclick="sendMessage()">Send</button>
+// api/signal.js
 
-  <script>
-    const chatElement = document.getElementById('chat');
-    const inputElement = document.getElementById('input');
+// In-memory opslag voor berichten per peer
+let signals = {}; 
 
-    let localConnection;
-    let remoteConnection;
-    let sendChannel;
-    let receiveChannel;
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    // Ontvang bericht van een peer
+    try {
+      const signalData = req.body;
 
-    // Functie om een bericht in de chat weer te geven
-    function appendMessage(message) {
-      const messageElement = document.createElement('div');
-      messageElement.textContent = message;
-      chatElement.appendChild(messageElement);
+      // Sla het bericht op voor de peer in het geheugen
+      signals[signalData.peerId] = signalData;
+
+      console.log(`Signal ontvangen voor ${signalData.peerId}: `, signalData);
+
+      res.status(200).json({ message: 'Signal ontvangen', data: signalData });
+    } catch (error) {
+      res.status(500).json({ error: 'Fout bij het verwerken van signalen' });
     }
+  } else if (req.method === 'GET') {
+    // Haal het laatste signaal op voor een bepaalde peer
+    try {
+      const { peerId } = req.query;
 
-    // Functie om een bericht via WebRTC te versturen
-    function sendMessage() {
-      const message = inputElement.value;
-      sendChannel.send(message);
-      appendMessage('You: ' + message);
-      inputElement.value = '';
+      if (signals[peerId]) {
+        res.status(200).json({ signal: signals[peerId] }); // Stuur het signaal terug
+      } else {
+        res.status(200).json({ message: 'Geen signalen voor deze peer' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Fout bij het ophalen van signaal' });
     }
-
-    // Functie om signalen op te halen
-    async function getSignals() {
-      const response = await fetch('/api/signal');
-      const data = await response.json();
-      return data;
-    }
-
-    // WebRTC Peer-to-Peer Setup
-    async function setupPeerConnection() {
-      localConnection = new RTCPeerConnection();
-      sendChannel = localConnection.createDataChannel('chat');
-      sendChannel.onopen = () => appendMessage('Connected!');
-      sendChannel.onclose = () => appendMessage('Connection closed.');
-
-      receiveChannel = localConnection.createDataChannel('receiveChannel');
-      receiveChannel.onmessage = (event) => appendMessage('Peer: ' + event.data);
-
-      const offer = await localConnection.createOffer();
-      await localConnection.setLocalDescription(offer);
-
-      // Verstuur het aanbod naar de server
-      await fetch('/api/signal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'offer', sdp: localConnection.localDescription }),
-      });
-    }
-
-    // Verbinding maken met peer
-    async function connectToPeer() {
-      const signals = await getSignals();
-
-      signals.forEach(async (signal) => {
-        if (signal.type === 'offer') {
-          remoteConnection = new RTCPeerConnection();
-          remoteConnection.ondatachannel = (event) => {
-            receiveChannel = event.channel;
-            receiveChannel.onmessage = (event) => appendMessage('Peer: ' + event.data);
-          };
-
-          await remoteConnection.setRemoteDescription(signal.sdp);
-          const answer = await remoteConnection.createAnswer();
-          await remoteConnection.setLocalDescription(answer);
-
-          // Verstuur het antwoord terug naar de server
-          await fetch('/api/signal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
-          });
-        }
-      });
-    }
-
-    // Initialiseer de peer-verbinding
-    setupPeerConnection();
-    connectToPeer();
-
-  </script>
-</body>
-</html>
+  } else {
+    res.status(405).json({ error: 'Method Not Allowed' });
+  }
+}
