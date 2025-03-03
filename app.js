@@ -1,76 +1,74 @@
-// Functie om berichten op te slaan met tijdstempel en prefix
-function saveMessage(message) {
-  const timestamp = new Date().getTime(); // Verkrijg de huidige tijd in milliseconden
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const messageInput = document.getElementById('messageInput');
+const messageBox = document.getElementById('messageBox');
 
-  // Maak een unieke sleutel met prefix, bijvoorbeeld 'message_' plus de tijdstempel
-  const messageKey = `message_${timestamp}`;
+let peerId = "2000"; // Gebruik een vaste peerId voor de demo
 
-  // Voeg het bericht met tijdstempel toe aan het object
-  const messageData = {
-    message: message,
-    timestamp: timestamp
-  };
-
-  // Sla het bericht op met de unieke sleutel in localStorage
-  localStorage.setItem(messageKey, JSON.stringify(messageData));
-  console.log("Message saved:", messageData);
-
-  // Herlaad berichten na het opslaan
-  loadMessages();
+// Functie om het bericht bij te werken
+function updateMessageBox(message) {
+  messageBox.value = `${message.timestamp} - ${message.peerId}: ${message.message}`;
 }
 
-// Functie om berichten op te halen en alleen die binnen een uur te bewaren
-function getMessages() {
-  const messages = [];
+// Functie om een bericht te versturen
+sendMessageBtn.addEventListener('click', async () => {
+  const customMessage = messageInput.value.trim();
 
-  // Loop door alle opgeslagen berichten in localStorage
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const item = JSON.parse(localStorage.getItem(key));
-
-    // Controleer of het een bericht is met tijdstempel
-    if (item && item.timestamp) {
-      const currentTime = new Date().getTime();
-      const timeDifference = currentTime - item.timestamp;
-
-      // Alleen berichten die binnen een uur zijn toegevoegd, worden opgeslagen
-      if (timeDifference <= 3600000) {
-        messages.push(item.message);
-      } else {
-        // Verwijder oude berichten die ouder zijn dan 1 uur
-        localStorage.removeItem(key);
-      }
-    }
+  if (!customMessage) {
+    messageBox.value = "Please enter a message.";
+    return;
   }
 
-  // Retourneer de berichten die binnen een uur zijn ontvangen
-  return messages;
-}
+  const timestamp = new Date().toLocaleTimeString();
 
-// Functie om berichten te laden
-function loadMessages() {
-  const messages = getMessages();
-  const messageList = document.getElementById('message-list');
-  messageList.innerHTML = ''; // Maak de lijst leeg
+  const signal = {
+    peerId: peerId,
+    type: 'offer',
+    message: customMessage,
+    timestamp: timestamp,
+  };
 
-  // Voeg alle berichten toe aan de lijst
-  messages.forEach(message => {
-    const listItem = document.createElement('li');
-    listItem.textContent = message;
-    messageList.appendChild(listItem);
-  });
-}
+  try {
+    // Stuur het signaal naar de server
+    const response = await fetch('/api/signal', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(signal),
+    });
 
-// Event listener voor het verzenden van een bericht
-document.getElementById('send-message').addEventListener('click', () => {
-  const messageInput = document.getElementById('message-input');
-  const message = messageInput.value.trim();
-
-  if (message) {
-    saveMessage(message);
-    messageInput.value = ''; // Maak het inputveld leeg na het verzenden
+    if (response.ok) {
+      const responseData = await response.json();
+      updateMessageBox(responseData.data);
+    } else {
+      throw new Error('Failed to send message');
+    }
+  } catch (error) {
+    messageBox.value = `Error: ${error.message}`;
   }
 });
 
-// Laad berichten wanneer de pagina wordt geladen
-loadMessages();
+// Functie om berichten van peers op te halen
+async function getSignalFromPeer() {
+  try {
+    const response = await fetch(`/api/signal?peerId=${peerId}`, {
+      method: 'GET',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.signal) {
+        updateMessageBox(data.signal);
+      } else {
+        messageBox.value = 'No signal found for this peer';
+      }
+    } else {
+      throw new Error('Failed to retrieve message');
+    }
+  } catch (error) {
+    messageBox.value = `Error: ${error.message}`;
+  }
+}
+
+// Haal elke 3 seconden het signaal op
+setInterval(getSignalFromPeer, 3000);
