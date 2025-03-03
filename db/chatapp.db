@@ -1,7 +1,8 @@
 CREATE TABLE signals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  peerId TEXT NOT NULL,
-  type TEXT NOT NULL,
+  peerId TEXT,
+  type TEXT,
   message TEXT,
-  timestamp TEXT
+  timestamp TEXT,
+  status TEXT DEFAULT 'unread'  -- standaard is het bericht "ongelezen"
 );
