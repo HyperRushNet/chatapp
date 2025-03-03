@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Peer-to-Peer Chat</title>
+  <title>Peer-to-Peer Chat</title>
   <style>
     body { font-family: Arial, sans-serif; }
     #chat { width: 300px; height: 400px; border: 1px solid #ddd; overflow-y: auto; }
@@ -50,12 +50,20 @@
     async function setupPeerConnection() {
       localConnection = new RTCPeerConnection();
       sendChannel = localConnection.createDataChannel('chat');
-      sendChannel.onopen = () => appendMessage('Connected!');
-      sendChannel.onclose = () => appendMessage('Connection closed.');
 
+      sendChannel.onopen = () => {
+        appendMessage('Connected!');
+      };
+
+      sendChannel.onclose = () => {
+        appendMessage('Connection closed.');
+      };
+
+      // Ontvang berichten van de andere peer
       receiveChannel = localConnection.createDataChannel('receiveChannel');
       receiveChannel.onmessage = (event) => appendMessage('Peer: ' + event.data);
 
+      // Maak een aanbod voor de verbinding
       const offer = await localConnection.createOffer();
       await localConnection.setLocalDescription(offer);
       console.log('Sending offer: ', offer);
@@ -81,6 +89,7 @@
             receiveChannel.onmessage = (event) => appendMessage('Peer: ' + event.data);
           };
 
+          // Stel het remote aanbod in
           await remoteConnection.setRemoteDescription(signal.sdp);
           const answer = await remoteConnection.createAnswer();
           await remoteConnection.setLocalDescription(answer);
@@ -98,7 +107,7 @@
     // Functie om een bericht via WebRTC te versturen
     function sendMessage() {
       const message = inputElement.value;
-      if (sendChannel && sendChannel.readyState === 'open') {
+      if (sendChannel.readyState === 'open') {
         sendChannel.send(message);
         appendMessage('You: ' + message);
       } else {
