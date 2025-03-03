@@ -3,24 +3,33 @@ const messageInput = document.getElementById('messageInput');
 const messageBox = document.getElementById('messageBox');
 
 let peerId = "2000"; // Gebruik een vaste peerId
+let messages = []; // Opslag voor alle berichten
+
+// Functie om een bericht toe te voegen aan de lijst van berichten
+function updateMessageBox() {
+  messageBox.value = messages.map(msg => `${msg.timestamp} - ${msg.peerId}: ${msg.message}`).join('\n');
+}
 
 // Functie om een bericht te versturen
 sendMessageBtn.addEventListener('click', async () => {
-  const customMessage = messageInput.value;  // Het bericht dat de gebruiker invoert
+  const customMessage = messageInput.value.trim();  // Het bericht dat de gebruiker invoert
 
-  if (!customMessage.trim()) {
+  if (!customMessage) {
     messageBox.value = "Please enter a message.";
     return;
   }
 
-  try {
-    // Maak een signaal object voor de berichten
-    const signal = {
-      peerId: peerId,
-      type: 'offer',   // Of 'answer' afhankelijk van het signaal
-      message: customMessage, // Voeg het custom message toe aan het signaal
-    };
+  const timestamp = new Date().toLocaleTimeString();
 
+  // Maak een signaal object voor de berichten
+  const signal = {
+    peerId: peerId,
+    type: 'offer',   // Of 'answer' afhankelijk van het signaal
+    message: customMessage, // Voeg het custom message toe aan het signaal
+    timestamp: timestamp, // Voeg een timestamp toe aan elk bericht
+  };
+
+  try {
     // Stuur het signaal naar de server via een POST-aanroep
     const response = await fetch('/api/signal', {
       method: 'POST',
@@ -32,7 +41,8 @@ sendMessageBtn.addEventListener('click', async () => {
 
     if (response.ok) {
       const responseData = await response.json();
-      messageBox.value = `Message sent: ${JSON.stringify(responseData)}`;
+      messages.push(responseData.data);  // Voeg het nieuwe bericht toe aan de lijst
+      updateMessageBox();
     } else {
       throw new Error('Failed to send message');
     }
@@ -52,8 +62,9 @@ async function getSignalFromPeer() {
     if (response.ok) {
       const data = await response.json();
       if (data.signal) {
-        messageBox.value = `Received message: ${data.signal.message}`;
-        // Hier zou je het signal verder verwerken, bijvoorbeeld met WebRTC.
+        const signal = data.signal;
+        messages.push(signal); // Voeg het ontvangen signaal toe aan de berichtenlijst
+        updateMessageBox();
       } else {
         messageBox.value = 'No signal found for this peer';
       }
