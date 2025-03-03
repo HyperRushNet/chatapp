@@ -7,52 +7,44 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        #messages {
-            margin-bottom: 20px;
-        }
-        #messageInput {
-            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            margin: 0;
             padding: 10px;
-            margin-bottom: 10px;
         }
-        #sendButton {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
+        .messages {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
         }
-        #sendButton:hover {
-            background-color: #45a049;
+        .message {
+            padding: 5px;
+            margin: 5px 0;
+            background-color: #f1f1f1;
+            border-radius: 5px;
         }
-        .input-container {
-            margin-bottom: 15px;
-        }
-        .input-container label {
-            margin-right: 10px;
+        #inputMessage {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Chat App</h1>
 
-    <div id="messages"></div>
-
-    <div class="input-container">
-        <label for="senderPort">Your Port:</label>
-        <input type="text" id="senderPort" placeholder="Enter your port">
-    </div>
-
-    <div class="input-container">
-        <label for="receiverPort">Receiver's Port:</label>
-        <input type="text" id="receiverPort" placeholder="Enter receiver's port">
-    </div>
-
-    <textarea id="messageInput" placeholder="Type a message..."></textarea><br>
-    <button id="sendButton" onclick="sendMessage()">Send</button>
-
+    <div class="messages" id="messages"></div>
+    <input type="text" id="inputMessage" placeholder="Type a message...">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
 </body>
 </html>
