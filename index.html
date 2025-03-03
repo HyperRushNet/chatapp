@@ -4,14 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #messages {
+            margin-bottom: 20px;
+        }
+        #messageInput {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #sendButton {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #sendButton:hover {
+            background-color: #45a049;
+        }
+        .input-container {
+            margin-bottom: 15px;
+        }
+        .input-container label {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div id="chat">
-        <h2>Chat Messages</h2>
-        <div id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button onclick="sendMessage()">Send</button>
+    <h1>Chat App</h1>
+
+    <div id="messages"></div>
+
+    <div class="input-container">
+        <label for="senderPort">Your Port:</label>
+        <input type="text" id="senderPort" placeholder="Enter your port">
     </div>
+
+    <div class="input-container">
+        <label for="receiverPort">Receiver's Port:</label>
+        <input type="text" id="receiverPort" placeholder="Enter receiver's port">
+    </div>
+
+    <textarea id="messageInput" placeholder="Type a message..."></textarea><br>
+    <button id="sendButton" onclick="sendMessage()">Send</button>
+
     <script src="app.js"></script>
 </body>
 </html>
