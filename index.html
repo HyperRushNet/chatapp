@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>Peer-to-Peer Chat - Startpagina</title>
     <style>
         body {
@@ -30,7 +31,9 @@
     <input type="text" id="peerIdInput" placeholder="Enter friend's Peer ID" />
     <button onclick="startChat()">Start Chat</button>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.2/peer.min.js"></script>
+    <!-- PeerJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
+
     <script>
         const peer = new Peer(undefined, {
             host: 'peerjs-server.herokuapp.com',
