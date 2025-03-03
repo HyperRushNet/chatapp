@@ -17,15 +17,29 @@ export default async function handler(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Error storing signal in database' });
       }
-      // Zorg ervoor dat je de database sluit na de operatie
-      stmt.finalize();  // sluit de statement
-      db.close();  // sluit de databaseverbinding
-      res.status(200).json({
-        message: 'Signal received and stored',
-        peerId,
-        id: this.lastID,
+
+      // Zorg ervoor dat er altijd een signaal is voor de peer, zelfs als het een leeg signaal is
+      const defaultSignal = {
+        peerId: peerId,
+        message: 'No new messages for this peer',
+        timestamp: timestamp,
+      };
+
+      const defaultStmt = db.prepare("INSERT INTO signals (peerId, type, message, timestamp) VALUES (?, ?, ?, ?)");
+      defaultStmt.run(peerId, 'offer', defaultSignal.message, defaultSignal.timestamp, function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Error storing default signal' });
+        }
+
+        res.status(200).json({
+          message: 'Signal received and stored',
+          peerId,
+          id: this.lastID,
+        });
       });
+      defaultStmt.finalize();
     });
+    stmt.finalize();
   } else if (req.method === 'GET') {
     const { peerId } = req.query;
 
@@ -34,11 +48,8 @@ export default async function handler(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Error retrieving signal' });
       }
-      if (row) {
-        res.status(200).json({ signal: row });
-      } else {
-        res.status(200).json({ message: 'No signal found for this peer' });
-      }
+      // Er zal altijd een signaal zijn door de bovenstaande logica
+      res.status(200).json({ signal: row });
       db.close();  // Sluit de database na het ophalen van gegevens
     });
   } else {
