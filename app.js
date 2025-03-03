@@ -1,14 +1,24 @@
-const sendSignalButton = document.getElementById('sendSignalBtn');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const messageInput = document.getElementById('messageInput');
 const messageBox = document.getElementById('messageBox');
-let peerId = "2000"; // Je vaste peer-id (dit kan later dynamisch worden ingesteld)
 
-sendSignalButton.addEventListener('click', async () => {
+let peerId = "2000"; // Gebruik een vaste peerId
+
+// Functie om een bericht te versturen
+sendMessageBtn.addEventListener('click', async () => {
+  const customMessage = messageInput.value;  // Het bericht dat de gebruiker invoert
+
+  if (!customMessage.trim()) {
+    messageBox.value = "Please enter a message.";
+    return;
+  }
+
   try {
-    // Maak een signaal object
+    // Maak een signaal object voor de berichten
     const signal = {
-      peerId: peerId,  // Gebruik hier de unieke peer ID
-      type: 'offer',   // Of 'answer' afhankelijk van het type signaal
-      sdp: 'Sample SDP data', // Voeg hier je SDP of andere gegevens toe
+      peerId: peerId,
+      type: 'offer',   // Of 'answer' afhankelijk van het signaal
+      message: customMessage, // Voeg het custom message toe aan het signaal
     };
 
     // Stuur het signaal naar de server via een POST-aanroep
@@ -22,9 +32,9 @@ sendSignalButton.addEventListener('click', async () => {
 
     if (response.ok) {
       const responseData = await response.json();
-      messageBox.value = `Signal sent successfully: ${JSON.stringify(responseData)}`;
+      messageBox.value = `Message sent: ${JSON.stringify(responseData)}`;
     } else {
-      throw new Error('Failed to send signal');
+      throw new Error('Failed to send message');
     }
   } catch (error) {
     messageBox.value = `Error: ${error.message}`;
@@ -42,13 +52,13 @@ async function getSignalFromPeer() {
     if (response.ok) {
       const data = await response.json();
       if (data.signal) {
-        messageBox.value = `Received signal: ${JSON.stringify(data.signal)}`;
+        messageBox.value = `Received message: ${data.signal.message}`;
         // Hier zou je het signal verder verwerken, bijvoorbeeld met WebRTC.
       } else {
         messageBox.value = 'No signal found for this peer';
       }
     } else {
-      throw new Error('Failed to retrieve signal');
+      throw new Error('Failed to retrieve message');
     }
   } catch (error) {
     messageBox.value = `Error: ${error.message}`;
