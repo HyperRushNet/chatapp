@@ -1,34 +1,37 @@
-// api/signal.js
+// Importeren van benodigde modules
+const express = require('express');
+const bodyParser = require('body-parser');
 
-let users = {};  // Opslaan van gebruikers met een dynamisch poortnummer
+// Instantie van express maken
+const app = express();
 
-export default async function handler(req, res) {
-    if (req.method === 'POST') {
-        const { message, from, to } = req.body;
+// Gebruik JSON parser voor inkomende aanvragen
+app.use(bodyParser.json());
 
-        // Toon de ontvangen boodschap
-        console.log(`Received message from ${from} to ${to}: ${message}`);
+// API-endpoint om signalen te verwerken
+app.post('/api/signal', (req, res) => {
+    const { message, from, to } = req.body;
 
-        // Verzenden naar de juiste gebruiker
-        if (users[to]) {
-            // In een echte applicatie zou je de verbinding hier beheren en het bericht sturen naar de gebruiker
-            res.status(200).json({ status: "success", message: "Signal sent successfully" });
-        } else {
-            // Als de ontvanger niet gevonden is
-            res.status(404).json({ error: "Receiver not found" });
-        }
-    } else if (req.method === 'GET') {
-        // Genereer een dynamische poort voor de nieuwe gebruiker
-        const newPort = Math.floor(Math.random() * 10000) + 1000; // Genereer een poort tussen 1000 en 19999
-        const userId = Math.floor(Math.random() * 10000);  // Unieke ID voor de gebruiker
-        
-        // Sla de gebruiker en poort op
-        users[userId] = newPort;
-        console.log(`Generated port ${newPort} for user ${userId}`);
-
-        // Stuur de gebruiker het poortnummer terug
-        res.status(200).json({ port: newPort, userId: userId });
-    } else {
-        res.status(405).json({ error: "Method not allowed" });
+    // Controleer of alle vereiste gegevens aanwezig zijn
+    if (!message || !from || !to) {
+        return res.status(400).json({ error: 'Missing message, from, or to field' });
     }
-}
+
+    // Informatie loggen voor debugging
+    console.log(`Received signal from port ${from} to port ${to}: ${message}`);
+
+    // Hier zou je logica kunnen toevoegen om het bericht door te sturen naar de juiste peer
+    // Bijv. WebRTC verbindingen of het berichtenverkeer beheren op basis van de poorten
+
+    // Succesvolle verwerking van de signalen
+    res.status(200).json({
+        message: 'Signal received successfully!',
+        data: { message, from, to }
+    });
+});
+
+// Luisteren naar verzoeken op poort 3000
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
