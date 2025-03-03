@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peer-to-Peer Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
 </head>
 <body>
-  <h1>Peer-to-Peer Chat</h1>
-
-  <label for="messageInput">Enter your custom message:</label>
-  <textarea id="messageInput" rows="4" cols="50"></textarea>
-  
-  <button id="sendMessageBtn">Send Message</button>
-
-  <p>Message:</p>
-  <textarea id="messageBox" rows="6" cols="50" readonly></textarea>
-
-  <script src="app.js"></script>
+    <div id="chat">
+        <h2>Chat Messages</h2>
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
