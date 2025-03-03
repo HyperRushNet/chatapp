@@ -1,4 +1,3 @@
-# Peer-to-Peer Chat App 
 ---
 This is a simple Peer-to-Peer chat app using WebRTC to send messages between peers. The project uses a backend API with Node.js (Vercel) and SQLite to store and process messages.
 
