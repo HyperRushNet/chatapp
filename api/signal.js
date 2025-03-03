@@ -1,37 +1,15 @@
-// Importeren van benodigde modules
-const express = require('express');
-const bodyParser = require('body-parser');
+export default async function handler(req, res) {
+    if (req.method === 'POST') {
+        const { peerId } = req.body;
 
-// Instantie van express maken
-const app = express();
+        // Your logic to handle signal
+        const signal = {
+            type: 'signal',
+            sdp: 'v=0\r\no=- 12345 2 IN IP4 127.0.0.1\r\nt=0 0\r\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 0.0.0.0\r\na=ice-ufrag:abcd\r\na=ice-pwd:abcd1234\r\n',
+        };
 
-// Gebruik JSON parser voor inkomende aanvragen
-app.use(bodyParser.json());
-
-// API-endpoint om signalen te verwerken
-app.post('/api/signal', (req, res) => {
-    const { message, from, to } = req.body;
-
-    // Controleer of alle vereiste gegevens aanwezig zijn
-    if (!message || !from || !to) {
-        return res.status(400).json({ error: 'Missing message, from, or to field' });
+        res.status(200).json({ signal });
+    } else {
+        res.status(405).json({ message: 'Method Not Allowed' });
     }
-
-    // Informatie loggen voor debugging
-    console.log(`Received signal from port ${from} to port ${to}: ${message}`);
-
-    // Hier zou je logica kunnen toevoegen om het bericht door te sturen naar de juiste peer
-    // Bijv. WebRTC verbindingen of het berichtenverkeer beheren op basis van de poorten
-
-    // Succesvolle verwerking van de signalen
-    res.status(200).json({
-        message: 'Signal received successfully!',
-        data: { message, from, to }
-    });
-});
-
-// Luisteren naar verzoeken op poort 3000
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+}
