@@ -1,34 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peer-to-Peer Chat</title>
 </head>
 <body>
-    <h1>Chat Application</h1>
+  <h1>Peer-to-Peer Chat</h1>
 
-    <div>
-        <label for="myPort">Set Your Port:</label>
-        <input type="number" id="myPort" placeholder="Enter your port" value="3000">
-    </div>
+  <label for="messageInput">Enter your custom message:</label>
+  <textarea id="messageInput" rows="4" cols="50"></textarea>
+  
+  <button id="sendMessageBtn">Send Message</button>
 
-    <div>
-        <label for="peerPort">Enter Peer Port:</label>
-        <input type="number" id="peerPort" placeholder="Enter the peer's port">
-    </div>
+  <p>Message:</p>
+  <textarea id="messageBox" rows="6" cols="50" readonly></textarea>
 
-    <button id="connectBtn">Connect</button>
-
-    <div>
-        <label for="message">Message:</label>
-        <input type="text" id="message" placeholder="Enter message">
-        <button id="sendMessageBtn">Send Message</button>
-    </div>
-
-    <div id="messageDisplay"></div>
-
-    <script src="app.js"></script>
-    <script src="signal.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
