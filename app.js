@@ -1,74 +1,51 @@
-const sendMessageBtn = document.getElementById('sendMessageBtn');
-const messageInput = document.getElementById('messageInput');
-const messageBox = document.getElementById('messageBox');
+document.addEventListener('DOMContentLoaded', () => {
+    const connectBtn = document.getElementById('connectBtn');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const myPortInput = document.getElementById('myPort');
+    const peerPortInput = document.getElementById('peerPort');
+    const messageInput = document.getElementById('message');
+    const messageDisplay = document.getElementById('messageDisplay');
 
-let peerId = "2000"; // Gebruik een vaste peerId voor de demo
+    // Laad opgeslagen poort uit localStorage of stel een standaard in
+    const myPort = localStorage.getItem('myPort') || '3000';
+    myPortInput.value = myPort;  // Zet de poort in de input
 
-// Functie om het bericht bij te werken
-function updateMessageBox(message) {
-  messageBox.value = `${message.timestamp} - ${message.peerId}: ${message.message}`;
-}
-
-// Functie om een bericht te versturen
-sendMessageBtn.addEventListener('click', async () => {
-  const customMessage = messageInput.value.trim();
-
-  if (!customMessage) {
-    messageBox.value = "Please enter a message.";
-    return;
-  }
-
-  const timestamp = new Date().toLocaleTimeString();
-
-  const signal = {
-    peerId: peerId,
-    type: 'offer',
-    message: customMessage,
-    timestamp: timestamp,
-  };
-
-  try {
-    // Stuur het signaal naar de server
-    const response = await fetch('/api/signal', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(signal),
+    // Stel je poort in en sla deze op
+    myPortInput.addEventListener('change', () => {
+        const port = myPortInput.value;
+        localStorage.setItem('myPort', port);
     });
 
-    if (response.ok) {
-      const responseData = await response.json();
-      updateMessageBox(responseData.data);
-    } else {
-      throw new Error('Failed to send message');
+    // Functie om berichten weer te geven
+    function displayMessage(msg) {
+        const messageElement = document.createElement('p');
+        messageElement.textContent = msg;
+        messageDisplay.appendChild(messageElement);
     }
-  } catch (error) {
-    messageBox.value = `Error: ${error.message}`;
-  }
+
+    // Event voor verbinden
+    connectBtn.addEventListener('click', () => {
+        const myPort = localStorage.getItem('myPort');
+        const peerPort = peerPortInput.value;
+
+        if (peerPort) {
+            // Hier kan de verbinding opgezet worden via de poort van de peer.
+            // Bijvoorbeeld via WebRTC of een andere methode die je gebruikt.
+            displayMessage(`Connecting to peer on port ${peerPort}...`);
+        } else {
+            alert('Please enter a peer port.');
+        }
+    });
+
+    // Event voor het verzenden van berichten
+    sendMessageBtn.addEventListener('click', () => {
+        const message = messageInput.value;
+        if (message) {
+            displayMessage(`You: ${message}`);
+            // Hier wordt het bericht verzonden naar de peer via de opgegeven poort
+            // Dit kan via een API, WebSocket, of andere technologie die je gebruikt.
+        } else {
+            alert('Please enter a message.');
+        }
+    });
 });
-
-// Functie om berichten van peers op te halen
-async function getSignalFromPeer() {
-  try {
-    const response = await fetch(`/api/signal?peerId=${peerId}`, {
-      method: 'GET',
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.signal) {
-        updateMessageBox(data.signal);
-      } else {
-        messageBox.value = 'No signal found for this peer';
-      }
-    } else {
-      throw new Error('Failed to retrieve message');
-    }
-  } catch (error) {
-    messageBox.value = `Error: ${error.message}`;
-  }
-}
-
-// Haal elke 3 seconden het signaal op
-setInterval(getSignalFromPeer, 3000);
