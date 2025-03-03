@@ -5,7 +5,7 @@ const messagesDiv = document.getElementById('messages');
 // Peer-to-peer variables
 let localConnection;
 let sendChannel;
-let peerId = Date.now(); // Unique ID for this peer
+let peerId = 2000; // Vaste ID voor de peer
 
 // Create WebRTC connection
 function createConnection() {
