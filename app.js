@@ -3,11 +3,10 @@ const messageInput = document.getElementById('messageInput');
 const messageBox = document.getElementById('messageBox');
 
 let peerId = "2000"; // Gebruik een vaste peerId
-let messages = []; // Opslag voor alle berichten
 
-// Functie om een bericht toe te voegen aan de lijst van berichten
-function updateMessageBox() {
-  messageBox.value = messages.map(msg => `${msg.timestamp} - ${msg.peerId}: ${msg.message}`).join('\n');
+// Functie om een bericht bij te werken
+function updateMessageBox(message) {
+  messageBox.value = `${message.timestamp} - ${message.peerId}: ${message.message}`;
 }
 
 // Functie om een bericht te versturen
@@ -21,7 +20,7 @@ sendMessageBtn.addEventListener('click', async () => {
 
   const timestamp = new Date().toLocaleTimeString();
 
-  // Maak een signaal object voor de berichten
+  // Maak een signaal object voor het bericht
   const signal = {
     peerId: peerId,
     type: 'offer',   // Of 'answer' afhankelijk van het signaal
@@ -41,8 +40,7 @@ sendMessageBtn.addEventListener('click', async () => {
 
     if (response.ok) {
       const responseData = await response.json();
-      messages.push(responseData.data);  // Voeg het nieuwe bericht toe aan de lijst
-      updateMessageBox();
+      updateMessageBox(responseData.data);  // Werk het bericht bij
     } else {
       throw new Error('Failed to send message');
     }
@@ -62,9 +60,7 @@ async function getSignalFromPeer() {
     if (response.ok) {
       const data = await response.json();
       if (data.signal) {
-        const signal = data.signal;
-        messages.push(signal); // Voeg het ontvangen signaal toe aan de berichtenlijst
-        updateMessageBox();
+        updateMessageBox(data.signal); // Werk het bericht bij
       } else {
         messageBox.value = 'No signal found for this peer';
       }
