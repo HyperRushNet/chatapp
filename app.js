@@ -1,96 +1,84 @@
-const sendMessageButton = document.getElementById('sendMessageBtn');
-const messageInput = document.getElementById('messageInput');
-const messagesDiv = document.getElementById('messages');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peer to Peer Chat</title>
+</head>
+<body>
+  <h1>Peer to Peer Chat</h1>
+  <textarea id="chatBox" rows="10" cols="50" readonly></textarea><br>
+  <input type="text" id="messageInput" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
 
-// Peer-to-peer variables
-let localConnection;
-let sendChannel;
-let peerId = 2000; // Vaste ID voor de peer
+  <script>
+    const peerId = 2000; // Vaste Peer ID
+    let peerConnection;
+    let dataChannel;
+    
+    // WebRTC configuratie
+    const servers = null;
+    const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-// Create WebRTC connection
-function createConnection() {
-  localConnection = new RTCPeerConnection();
-  sendChannel = localConnection.createDataChannel("sendDataChannel");
+    // Functie om een nieuwe verbinding op te zetten
+    function startConnection() {
+      peerConnection = new RTCPeerConnection(configuration);
+      dataChannel = peerConnection.createDataChannel('chat');
+      
+      dataChannel.onopen = () => {
+        console.log("Data channel is open.");
+      };
+      
+      dataChannel.onmessage = (event) => {
+        document.getElementById('chatBox').value += "Peer: " + event.data + "\n";
+      };
 
-  sendChannel.onmessage = (event) => {
-    displayMessage(`Peer: ${event.data}`);
-  };
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal({
+            type: 'candidate',
+            candidate: event.candidate
+          });
+        }
+      };
 
-  localConnection.createOffer()
-    .then(offer => {
-      return localConnection.setLocalDescription(offer);
-    })
-    .then(() => {
-      return fetch('/api/signal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      peerConnection.createOffer().then(offer => {
+        return peerConnection.setLocalDescription(offer);
+      }).then(() => {
+        sendSignal({
           type: 'offer',
-          sdp: localConnection.localDescription.sdp,
-          id: peerId
-        }), // Correctly closing JSON.stringify body
-      });
-    })
-    .catch(error => console.error('Error creating offer:', error));
-}
+          sdp: peerConnection.localDescription
+        });
+      }).catch(err => console.error(err));
+    }
 
-// Display message in the chat window
-function displayMessage(message) {
-  const messageDiv = document.createElement('div');
-  messageDiv.textContent = message;
-  messagesDiv.appendChild(messageDiv);
-}
-
-// Send message to the peer
-sendMessageButton.onclick = () => {
-  const message = messageInput.value;
-  if (message) {
-    sendChannel.send(message);
-    displayMessage(`You: ${message}`);
-    messageInput.value = ''; // Clear input field
-  }
-};
-
-// Retrieve offer or answer from the signaling server
-function getOfferOrAnswer(type) {
-  return fetch(`/api/signal?type=${type}&id=${peerId}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.sdp) {
-        return new RTCSessionDescription({ type, sdp: data.sdp });
-      } else {
-        throw new Error('SDP not found');
-      }
-    });
-}
-
-// Receive and set remote description
-function receiveOffer() {
-  getOfferOrAnswer('offer')
-    .then(offerDescription => {
-      return localConnection.setRemoteDescription(offerDescription);
-    })
-    .then(() => localConnection.createAnswer())
-    .then(answer => {
-      return localConnection.setLocalDescription(answer);
-    })
-    .then(() => {
-      return fetch('/api/signal', {
+    // Functie om een signaal te sturen naar de backend
+    function sendSignal(data) {
+      fetch('https://chatapp-git-main-hrn.vercel.app/api/offer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'answer',
-          sdp: localConnection.localDescription.sdp,
-          id: peerId
-        }),
-      });
-    })
-    .catch(error => console.error('Error receiving offer:', error));
-}
+        body: JSON.stringify({ peerId, data })
+      }).then(response => response.json())
+        .then(response => {
+          console.log('Signal sent:', response);
+        })
+        .catch(error => console.error('Error sending signal:', error));
+    }
 
-// Call the function to receive offer if peer sends one
-receiveOffer(); // This should be triggered in the right order based on your flow
+    // Functie om een bericht te sturen
+    function sendMessage() {
+      const message = document.getElementById('messageInput').value;
+      if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(message);
+        document.getElementById('chatBox').value += "You: " + message + "\n";
+        document.getElementById('messageInput').value = '';
+      }
+    }
+
+    // Start de verbinding
+    startConnection();
+  </script>
+</body>
+</html>
