@@ -5,137 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Peer-to-Peer Chat</title>
   <style>
-    body { font-family: Arial, sans-serif; }
-    #chat { width: 300px; height: 400px; border: 1px solid #ddd; overflow-y: auto; }
-    #input { width: 100%; }
-    #message { margin: 10px 0; }
-    #send-status { margin-top: 10px; color: green; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+    #messages { max-height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+    input, button { padding: 10px; font-size: 14px; margin-top: 10px; }
   </style>
 </head>
 <body>
   <h1>Peer-to-Peer Chat</h1>
-  <div id="chat"></div>
-  <input type="text" id="input" placeholder="Type a message..." />
-  <button onclick="sendMessage()">Send</button>
-  <div id="send-status">Send Channel Status: <span id="status">Waiting...</span></div>
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Type a message..." />
+  <button id="sendMessageBtn">Send</button>
 
-  <script>
-    const chatElement = document.getElementById('chat');
-    const inputElement = document.getElementById('input');
-    const statusElement = document.getElementById('status');
-
-    let localConnection;
-    let remoteConnection;
-    let sendChannel;
-    let receiveChannel;
-
-    const SIGNALING_URL = 'https://chatapp-git-main-hrn.vercel.app/api/signal'; // Vervang met je Vercel-URL
-
-    // Functie om een bericht in de chat weer te geven
-    function appendMessage(message, sender = 'You') {
-      const messageElement = document.createElement('div');
-      const timestamp = new Date().toLocaleTimeString();
-      messageElement.textContent = `[${timestamp}] ${sender}: ${message}`;
-      chatElement.appendChild(messageElement);
-      chatElement.scrollTop = chatElement.scrollHeight; // Scroll naar beneden
-    }
-
-    // Functie om de status van de sendChannel in de body bij te werken
-    function updateSendChannelStatus(status) {
-      statusElement.innerHTML = `Send Channel Status: <span style="color: ${status === 'open' ? 'green' : status === 'closed' ? 'red' : 'orange'}">${status}</span>`;
-    }
-
-    // WebRTC Peer-to-Peer Setup
-    async function setupPeerConnection() {
-      localConnection = new RTCPeerConnection();
-      sendChannel = localConnection.createDataChannel('chat');
-
-      sendChannel.onopen = () => {
-        appendMessage('Connected!');
-        updateSendChannelStatus('open');
-      };
-
-      sendChannel.onclose = () => {
-        appendMessage('Connection closed.');
-        updateSendChannelStatus('closed');
-      };
-
-      sendChannel.onerror = (error) => {
-        console.error('Send channel error:', error);
-        updateSendChannelStatus('error');
-      };
-
-      // Maak een aanbod voor de verbinding
-      const offer = await localConnection.createOffer();
-      await localConnection.setLocalDescription(offer);
-      console.log('Sending offer: ', offer);
-
-      // Verstuur het aanbod naar de Vercel API
-      await fetch(SIGNALING_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'offer', sdp: localConnection.localDescription }),
-      });
-    }
-
-    // Verbinding maken met peer
-    async function fetchSignals() {
-      const response = await fetch(SIGNALING_URL);
-      const signals = await response.json();
-
-      // Verwerk het meest recente aanbod of antwoord
-      if (signals.length > 0) {
-        const signal = signals[signals.length - 1];
-
-        if (signal.type === 'offer') {
-          remoteConnection = new RTCPeerConnection();
-          remoteConnection.ondatachannel = (event) => {
-            receiveChannel = event.channel;
-            receiveChannel.onmessage = (event) => {
-              const messageData = JSON.parse(event.data);
-              appendMessage(messageData.message, messageData.sender);
-            };
-          };
-
-          // Stel het remote aanbod in en maak het antwoord
-          try {
-            await remoteConnection.setRemoteDescription(signal.sdp);
-            const answer = await remoteConnection.createAnswer();
-            await remoteConnection.setLocalDescription(answer);
-
-            // Verstuur het antwoord naar de Vercel API
-            await fetch(SIGNALING_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
-            });
-          } catch (error) {
-            console.error('Error setting remote description or creating answer:', error);
-          }
-        }
-      }
-    }
-
-    // Functie om een bericht via WebRTC te versturen
-    function sendMessage() {
-      const message = inputElement.value;
-      if (sendChannel && sendChannel.readyState === 'open') {
-        const messageData = {
-          sender: 'You',
-          message: message
-        };
-        sendChannel.send(JSON.stringify(messageData));
-        appendMessage(message, 'You');
-      } else {
-        console.error('Send channel not open');
-        updateSendChannelStatus('not open');
-      }
-      inputElement.value = '';
-    }
-
-    // Initialiseer de peer-verbinding
-    setupPeerConnection();
-    setInterval(fetchSignals, 3000); // Controleer regelmatig op nieuwe signalingdata
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
