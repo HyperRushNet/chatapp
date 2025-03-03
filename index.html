@@ -29,6 +29,8 @@
     let sendChannel;
     let receiveChannel;
 
+    const SIGNALING_URL = 'https://your-vercel-url.vercel.app/api/signal'; // Vervang met je Vercel-URL
+
     // Functie om een bericht in de chat weer te geven
     function appendMessage(message, sender = 'You') {
       const messageElement = document.createElement('div');
@@ -38,16 +40,9 @@
       chatElement.scrollTop = chatElement.scrollHeight; // Scroll naar beneden
     }
 
-    // Functie om signalen op te halen
-    async function getSignals() {
-      try {
-        const response = await fetch('/api/signal');
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching signals:', error);
-        return [];
-      }
+    // Functie om de status van de sendChannel in de body bij te werken
+    function updateSendChannelStatus(status) {
+      statusElement.innerHTML = `Send Channel Status: <span style="color: ${status === 'open' ? 'green' : status === 'closed' ? 'red' : 'orange'}">${status}</span>`;
     }
 
     // WebRTC Peer-to-Peer Setup
@@ -75,8 +70,8 @@
       await localConnection.setLocalDescription(offer);
       console.log('Sending offer: ', offer);
 
-      // Verstuur het aanbod naar de server
-      await fetch('/api/signal', {
+      // Verstuur het aanbod naar de Vercel API
+      await fetch(SIGNALING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'offer', sdp: localConnection.localDescription }),
@@ -84,11 +79,14 @@
     }
 
     // Verbinding maken met peer
-    async function connectToPeer() {
-      const signals = await getSignals();
-      console.log('Received signals:', signals);
+    async function fetchSignals() {
+      const response = await fetch(SIGNALING_URL);
+      const signals = await response.json();
 
-      signals.forEach(async (signal) => {
+      // Verwerk het meest recente aanbod of antwoord
+      if (signals.length > 0) {
+        const signal = signals[signals.length - 1];
+
         if (signal.type === 'offer') {
           remoteConnection = new RTCPeerConnection();
           remoteConnection.ondatachannel = (event) => {
@@ -100,29 +98,22 @@
           };
 
           // Stel het remote aanbod in en maak het antwoord
-          if (remoteConnection.signalingState === "stable" || remoteConnection.signalingState === "have-remote-offer") {
-            try {
-              await remoteConnection.setRemoteDescription(signal.sdp);
-              const answer = await remoteConnection.createAnswer();
-              await remoteConnection.setLocalDescription(answer);
+          try {
+            await remoteConnection.setRemoteDescription(signal.sdp);
+            const answer = await remoteConnection.createAnswer();
+            await remoteConnection.setLocalDescription(answer);
 
-              // Verstuur het antwoord naar de server
-              await fetch('/api/signal', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
-              });
-            } catch (error) {
-              console.error('Error setting remote description or creating answer:', error);
-            }
+            // Verstuur het antwoord naar de Vercel API
+            await fetch(SIGNALING_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
+            });
+          } catch (error) {
+            console.error('Error setting remote description or creating answer:', error);
           }
         }
-      });
-    }
-
-    // Functie om de status van de sendChannel in de body bij te werken
-    function updateSendChannelStatus(status) {
-      statusElement.innerHTML = `Send Channel Status: <span style="color: ${status === 'open' ? 'green' : status === 'closed' ? 'red' : 'orange'}">${status}</span>`;
+      }
     }
 
     // Functie om een bericht via WebRTC te versturen
@@ -144,7 +135,7 @@
 
     // Initialiseer de peer-verbinding
     setupPeerConnection();
-    connectToPeer();
+    setInterval(fetchSignals, 3000); // Controleer regelmatig op nieuwe signalingdata
   </script>
 </body>
 </html>
