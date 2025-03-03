@@ -8,7 +8,7 @@ sendSignalButton.addEventListener('click', async () => {
     const signal = {
       peerId: peerId,  // Gebruik hier de unieke peer ID
       type: 'offer',   // Of 'answer' afhankelijk van het type signaal
-      sdp: 'Sample SDP data', // Voeg hier je SDP of andere gegevens toe
+      sdp: 'Hello there!', // Voeg hier je SDP of andere gegevens toe
     };
 
     // Stuur het signaal naar de server via een POST-aanroep
