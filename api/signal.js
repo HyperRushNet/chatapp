@@ -14,6 +14,7 @@ export default async function handler(req, res) {
       }
 
       signals[signalData.peerId].push(signalData);
+      console.log(`Signal received for ${signalData.peerId}: `, signalData);
 
       res.status(200).json({ message: 'Signal received', data: signalData });
     } catch (error) {
@@ -25,7 +26,8 @@ export default async function handler(req, res) {
       const { peerId } = req.query;
 
       if (signals[peerId] && signals[peerId].length > 0) {
-        const signalToSend = signals[peerId].shift(); // Neem het eerste signaal voor de peer
+        const signalToSend = signals[peerId][0]; // Geef altijd het eerste signaal
+        // Verwijder het signaal niet om herhaald ophalen mogelijk te maken
         res.status(200).json({ signal: signalToSend });
       } else {
         res.status(200).json({ message: 'No signals for this peer' });
