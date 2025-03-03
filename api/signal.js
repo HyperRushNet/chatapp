@@ -1,24 +1,40 @@
-// api/signal.js
-let signalingMessages = [];
+let offers = {};
+let answers = {};
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
-    // Voeg het bericht toe aan de signaling-berichten
-    signalingMessages.push(req.body);
-
-    // Beperk het aantal berichten om opslag te minimaliseren (optioneel)
-    if (signalingMessages.length > 10) {
-      signalingMessages.shift(); // Verwijder het oudste bericht
+    const { type, sdp, id } = req.body;
+    
+    if (type === 'offer') {
+      offers[id] = sdp; // Save offer in memory
+      res.status(200).json({ message: 'Offer saved', id });
+    } else if (type === 'answer') {
+      answers[id] = sdp; // Save answer in memory
+      res.status(200).json({ message: 'Answer saved', id });
+    } else {
+      res.status(400).json({ message: 'Invalid type' });
     }
-
-    return res.status(200).json({ success: true });
+  } else if (req.method === 'GET') {
+    const { id, type } = req.query;
+    
+    if (type === 'offer') {
+      const offer = offers[id];
+      if (offer) {
+        res.status(200).json({ sdp: offer });
+      } else {
+        res.status(404).json({ message: 'Offer not found' });
+      }
+    } else if (type === 'answer') {
+      const answer = answers[id];
+      if (answer) {
+        res.status(200).json({ sdp: answer });
+      } else {
+        res.status(404).json({ message: 'Answer not found' });
+      }
+    } else {
+      res.status(400).json({ message: 'Invalid type' });
+    }
+  } else {
+    res.status(405).json({ message: 'Method Not Allowed' });
   }
-
-  if (req.method === 'GET') {
-    // Verstuur de signaling-berichten naar de client
-    return res.status(200).json(signalingMessages);
-  }
-
-  // Fout als de methode niet wordt ondersteund
-  return res.status(405).json({ error: 'Method not allowed' });
 }
