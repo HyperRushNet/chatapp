@@ -1,1 +1,7 @@
-   
+CREATE TABLE signals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  peerId TEXT NOT NULL,
+  type TEXT NOT NULL,
+  message TEXT,
+  timestamp TEXT
+);
