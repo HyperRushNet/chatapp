@@ -30,7 +30,7 @@ function createConnection() {
           type: 'offer',
           sdp: localConnection.localDescription.sdp,
           id: peerId
-        }),
+        }), // Correctly closing JSON.stringify body
       });
     })
     .catch(error => console.error('Error creating offer:', error));
@@ -68,26 +68,28 @@ function getOfferOrAnswer(type) {
 
 // Receive and set remote description
 function receiveOffer() {
-  getOfferOrAnswer('offer').then(offerDescription => {
-    localConnection.setRemoteDescription(offerDescription)
-      .then(() => localConnection.createAnswer())
-      .then(answer => {
-        return localConnection.setLocalDescription(answer);
-      })
-      .then(() => {
-        return fetch('/api/signal', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'answer',
-            sdp: localConnection.localDescription.sdp,
-            id: peerId
-          }),
-        });
-      })
-      .catch(error => console.error('Error receiving offer:', error));
+  getOfferOrAnswer('offer')
+    .then(offerDescription => {
+      return localConnection.setRemoteDescription(offerDescription);
+    })
+    .then(() => localConnection.createAnswer())
+    .then(answer => {
+      return localConnection.setLocalDescription(answer);
+    })
+    .then(() => {
+      return fetch('/api/signal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'answer',
+          sdp: localConnection.localDescription.sdp,
+          id: peerId
+        }),
+      });
+    })
+    .catch(error => console.error('Error receiving offer:', error));
 }
 
 // Call the function to receive offer if peer sends one
