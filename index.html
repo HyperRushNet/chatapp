@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="data:,">
     <title>Peer-to-Peer Chat - Startpagina</title>
     <style>
         body {
@@ -27,7 +26,7 @@
 <body>
 
     <h2>Peer-to-Peer Chat - Startpagina</h2>
-    <div id="peer-id">Je Peer ID: <span id="my-peer-id">Loading...</span></div>
+    <div id="peer-id">Je Peer ID: <span id="my-peer-id">Laden...</span></div>
     <input type="text" id="peerIdInput" placeholder="Enter friend's Peer ID" />
     <button onclick="startChat()">Start Chat</button>
 
@@ -36,15 +35,24 @@
 
     <script>
         const peer = new Peer(undefined, {
-            host: 'peerjs-server.herokuapp.com',
-            port: 9000,
+            host: 'peerjs.com',
+            port: 443,
+            secure: true,
             path: '/myapp'
         });
 
+        // Event voor wanneer de Peer ID is geopend
         peer.on('open', (id) => {
+            console.log('Peer ID is:', id); // Logging Peer ID
             document.getElementById('my-peer-id').textContent = id;
         });
 
+        // Event voor wanneer er een fout optreedt
+        peer.on('error', (err) => {
+            console.log('Error connecting to PeerJS:', err); // Logging eventuele foutmeldingen
+        });
+
+        // Start chatfunctie
         function startChat() {
             const peerId = document.getElementById('peerIdInput').value;
             if (peerId) {
