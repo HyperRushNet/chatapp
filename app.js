@@ -1,77 +1,74 @@
-const messagesContainer = document.getElementById('messages');
-const inputMessage = document.getElementById('inputMessage');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const messageInput = document.getElementById('messageInput');
+const messageBox = document.getElementById('messageBox');
 
-const peerId = "2000";  // Custom fixed peer ID
-let signalChannel;
-let sendChannel;
+let peerId = "2000"; // Gebruik een vaste peerId voor de demo
 
-function displayMessage(message) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
-    messageElement.innerText = message;
-    messagesContainer.appendChild(messageElement);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+// Functie om het bericht bij te werken
+function updateMessageBox(message) {
+  messageBox.value = `${message.timestamp} - ${message.peerId}: ${message.message}`;
 }
 
-async function sendMessage(message) {
-    try {
-        if (sendChannel && sendChannel.readyState === 'open') {
-            sendChannel.send(message);
-            displayMessage(`You: ${message}`);
-        } else {
-            console.log('Send channel not open');
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Send channel not open'
-            });
-        }
-    } catch (error) {
-        console.error('Error sending message:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message
-        });
-    }
-}
+// Functie om een bericht te versturen
+sendMessageBtn.addEventListener('click', async () => {
+  const customMessage = messageInput.value.trim();
 
-async function createOffer() {
-    const response = await fetch('/api/offer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peerId: peerId })
-    });
-    const data = await response.json();
-    if (data.offer) {
-        console.log('Sending offer:', data.offer);
-        // Assuming signal exchange will be handled by your server
-        signalChannel = data.offer;
-        sendMessage("Offer sent!");
-    }
-}
+  if (!customMessage) {
+    messageBox.value = "Please enter a message.";
+    return;
+  }
 
-async function createSignal() {
+  const timestamp = new Date().toLocaleTimeString();
+
+  const signal = {
+    peerId: peerId,
+    type: 'offer',
+    message: customMessage,
+    timestamp: timestamp,
+  };
+
+  try {
+    // Stuur het signaal naar de server
     const response = await fetch('/api/signal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peerId: peerId })
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(signal),
     });
-    const data = await response.json();
-    if (data.signal) {
-        console.log('Signal created:', data.signal);
-        displayMessage(`Signal received from Peer`);
-    }
-}
 
-inputMessage.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        sendMessage(inputMessage.value);
-        inputMessage.value = '';
+    if (response.ok) {
+      const responseData = await response.json();
+      updateMessageBox(responseData.data);
+    } else {
+      throw new Error('Failed to send message');
     }
+  } catch (error) {
+    messageBox.value = `Error: ${error.message}`;
+  }
 });
 
-window.onload = () => {
-    createOffer(); // initiate connection
-    createSignal(); // initiate signal reception
-};
+// Functie om berichten van peers op te halen
+async function getSignalFromPeer() {
+  try {
+    const response = await fetch(`/api/signal?peerId=${peerId}`, {
+      method: 'GET',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.signal) {
+        updateMessageBox(data.signal);
+      } else {
+        messageBox.value = 'No signal found for this peer';
+      }
+    } else {
+      throw new Error('Failed to retrieve message');
+    }
+  } catch (error) {
+    messageBox.value = `Error: ${error.message}`;
+  }
+}
+
+// Haal elke 3 seconden het signaal op
+setInterval(getSignalFromPeer, 3000);
