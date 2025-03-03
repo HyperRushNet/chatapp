@@ -1,5 +1,3 @@
-// api/signal.js
-
 // In-memory opslag voor berichten per peer
 let signals = {}; 
 
