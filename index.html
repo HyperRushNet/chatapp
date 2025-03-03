@@ -26,10 +26,11 @@
     let sendChannel;
     let receiveChannel;
 
-    // Functie om een bericht in de chat weer te geven
-    function appendMessage(message) {
+    // Functie om een bericht in de chat weer te geven met extra informatie
+    function appendMessage(message, sender = 'You') {
       const messageElement = document.createElement('div');
-      messageElement.textContent = message;
+      const timestamp = new Date().toLocaleTimeString();
+      messageElement.textContent = `[${timestamp}] ${sender}: ${message}`;
       chatElement.appendChild(messageElement);
       chatElement.scrollTop = chatElement.scrollHeight; // Scroll naar beneden
     }
@@ -82,7 +83,10 @@
           remoteConnection = new RTCPeerConnection();
           remoteConnection.ondatachannel = (event) => {
             receiveChannel = event.channel;
-            receiveChannel.onmessage = (event) => appendMessage('Peer: ' + event.data);
+            receiveChannel.onmessage = (event) => {
+              const messageData = JSON.parse(event.data);
+              appendMessage(messageData.message, messageData.sender);
+            };
           };
 
           // Stel het remote aanbod in
@@ -102,12 +106,16 @@
       });
     }
 
-    // Functie om een bericht via WebRTC te versturen
+    // Functie om een bericht via WebRTC te versturen met extra informatie
     function sendMessage() {
       const message = inputElement.value;
       if (sendChannel && sendChannel.readyState === 'open') {
-        sendChannel.send(message);
-        appendMessage('You: ' + message);
+        const messageData = {
+          sender: 'You',
+          message: message
+        };
+        sendChannel.send(JSON.stringify(messageData));
+        appendMessage(message, 'You');
       } else {
         console.error('Send channel not open');
       }
