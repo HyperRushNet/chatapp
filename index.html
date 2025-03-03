@@ -89,18 +89,22 @@
             };
           };
 
-          // Stel het remote aanbod in
-          if (remoteConnection.signalingState === "stable") {
-            await remoteConnection.setRemoteDescription(signal.sdp);
-            const answer = await remoteConnection.createAnswer();
-            await remoteConnection.setLocalDescription(answer);
+          // Stel het remote aanbod in en maak het antwoord
+          if (remoteConnection.signalingState === "stable" || remoteConnection.signalingState === "have-remote-offer") {
+            try {
+              await remoteConnection.setRemoteDescription(signal.sdp);
+              const answer = await remoteConnection.createAnswer();
+              await remoteConnection.setLocalDescription(answer);
 
-            // Verstuur het antwoord terug naar de server
-            await fetch('/api/signal', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
-            });
+              // Verstuur het antwoord naar de server
+              await fetch('/api/signal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'answer', sdp: remoteConnection.localDescription }),
+              });
+            } catch (error) {
+              console.error('Error setting remote description or creating answer:', error);
+            }
           }
         }
       });
