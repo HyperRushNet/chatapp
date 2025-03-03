@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peer-to-Peer Chat</title>
+  <title>The Peer-to-Peer Chat</title>
   <style>
     body { font-family: Arial, sans-serif; }
     #chat { width: 300px; height: 400px; border: 1px solid #ddd; overflow-y: auto; }
@@ -31,21 +31,19 @@
       const messageElement = document.createElement('div');
       messageElement.textContent = message;
       chatElement.appendChild(messageElement);
-    }
-
-    // Functie om een bericht via WebRTC te versturen
-    function sendMessage() {
-      const message = inputElement.value;
-      sendChannel.send(message);
-      appendMessage('You: ' + message);
-      inputElement.value = '';
+      chatElement.scrollTop = chatElement.scrollHeight; // Scroll naar beneden
     }
 
     // Functie om signalen op te halen
     async function getSignals() {
-      const response = await fetch('/api/signal');
-      const data = await response.json();
-      return data;
+      try {
+        const response = await fetch('/api/signal');
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching signals:', error);
+        return [];
+      }
     }
 
     // WebRTC Peer-to-Peer Setup
@@ -60,6 +58,7 @@
 
       const offer = await localConnection.createOffer();
       await localConnection.setLocalDescription(offer);
+      console.log('Sending offer: ', offer);
 
       // Verstuur het aanbod naar de server
       await fetch('/api/signal', {
@@ -72,6 +71,7 @@
     // Verbinding maken met peer
     async function connectToPeer() {
       const signals = await getSignals();
+      console.log('Received signals:', signals);
 
       signals.forEach(async (signal) => {
         if (signal.type === 'offer') {
@@ -93,6 +93,18 @@
           });
         }
       });
+    }
+
+    // Functie om een bericht via WebRTC te versturen
+    function sendMessage() {
+      const message = inputElement.value;
+      if (sendChannel && sendChannel.readyState === 'open') {
+        sendChannel.send(message);
+        appendMessage('You: ' + message);
+      } else {
+        console.error('Send channel not open');
+      }
+      inputElement.value = '';
     }
 
     // Initialiseer de peer-verbinding
