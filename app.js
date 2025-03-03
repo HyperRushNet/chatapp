@@ -1,42 +1,77 @@
-// Functie om een bericht te versturen
-function sendMessage() {
-    const message = document.getElementById("messageInput").value;
-    const senderPort = document.getElementById("senderPort").value;
-    const receiverPort = document.getElementById("receiverPort").value;
+const messagesContainer = document.getElementById('messages');
+const inputMessage = document.getElementById('inputMessage');
 
-    if (!senderPort || !receiverPort) {
-        alert("Please enter both sender and receiver ports.");
-        return;
-    }
+const peerId = "2000";  // Custom fixed peer ID
+let signalChannel;
+let sendChannel;
 
-    const prefix = `${senderPort}-${receiverPort}`;  // Prefix met de poort van de verzender en ontvanger
-    const messageWithPrefix = `${prefix}: ${message}`;
-
-    // Verstuur het bericht naar de server
-    fetch("/api/signal", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            message: messageWithPrefix,
-            from: senderPort,
-            to: receiverPort,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Message sent:", data);
-        displayMessage(messageWithPrefix);
-    })
-    .catch((error) => {
-        console.error("Error:", error);
-    });
-}
-
-// Toon het bericht op het scherm
 function displayMessage(message) {
-    const messageElement = document.createElement("div");
-    messageElement.textContent = message;
-    document.getElementById("messages").appendChild(messageElement);
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+    messageElement.innerText = message;
+    messagesContainer.appendChild(messageElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
+
+async function sendMessage(message) {
+    try {
+        if (sendChannel && sendChannel.readyState === 'open') {
+            sendChannel.send(message);
+            displayMessage(`You: ${message}`);
+        } else {
+            console.log('Send channel not open');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Send channel not open'
+            });
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message
+        });
+    }
+}
+
+async function createOffer() {
+    const response = await fetch('/api/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peerId: peerId })
+    });
+    const data = await response.json();
+    if (data.offer) {
+        console.log('Sending offer:', data.offer);
+        // Assuming signal exchange will be handled by your server
+        signalChannel = data.offer;
+        sendMessage("Offer sent!");
+    }
+}
+
+async function createSignal() {
+    const response = await fetch('/api/signal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peerId: peerId })
+    });
+    const data = await response.json();
+    if (data.signal) {
+        console.log('Signal created:', data.signal);
+        displayMessage(`Signal received from Peer`);
+    }
+}
+
+inputMessage.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        sendMessage(inputMessage.value);
+        inputMessage.value = '';
+    }
+});
+
+window.onload = () => {
+    createOffer(); // initiate connection
+    createSignal(); // initiate signal reception
+};
