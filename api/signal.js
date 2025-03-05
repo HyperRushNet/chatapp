@@ -1,7 +1,12 @@
 // In-memory opslag voor berichten per peer
-let signals = {}; 
+let signals = {};
 
 export default async function handler(req, res) {
+  // Voeg CORS headers toe
+  res.setHeader('Access-Control-Allow-Origin', '*');  // Sta verzoeken vanaf elk domein toe
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');  // Sta alleen GET en POST methoden toe
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');  // Sta Content-Type header toe
+
   if (req.method === 'POST') {
     // Ontvang bericht van een peer
     try {
