@@ -25,6 +25,17 @@ function deleteOldMessages() {
 deleteOldMessages();
 
 export default async function handler(req, res) {
+  // Voeg CORS headers toe om verzoeken van andere domeinen toe te staan
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Dit staat verzoeken van elke domein toe
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); // Sta GET en POST-methoden toe
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Sta de Content-Type header toe
+
+  // Als de HTTP-methode OPTIONS is, geef dan een lege reactie terug
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method === 'POST') {
     const { peerId, data } = req.body;
     const timestamp = new Date().toLocaleTimeString();
