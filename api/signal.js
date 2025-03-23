@@ -1,5 +1,4 @@
 // In-memory opslag voor berichten per peer
-let signals = {}; 
 
 export default async function handler(req, res) {
   // Voeg CORS headers toe om verzoeken van andere domeinen toe te staan
