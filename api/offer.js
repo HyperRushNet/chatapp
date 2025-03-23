@@ -4,6 +4,8 @@ import sqlite3 from 'sqlite3';
 const db = new sqlite3.Database('./db/chatapp.db', sqlite3.OPEN_READWRITE, (err) => {
   if (err) {
     console.error('Fout bij het openen van de database:', err.message);
+  } else {
+    console.log('Database succesvol geopend');
   }
 });
 
@@ -44,6 +46,7 @@ export default async function handler(req, res) {
     const stmt = db.prepare("INSERT INTO signals (peerId, type, message, timestamp, status) VALUES (?, ?, ?, ?, ?)");
     stmt.run(peerId, data.type, data.message, timestamp, 'unread', function(err) {
       if (err) {
+        console.error('Error storing signal in database:', err.message); // Log the error
         return res.status(500).json({ error: 'Error storing signal in database' });
       }
 
@@ -60,6 +63,7 @@ export default async function handler(req, res) {
     // Haal het laatste signaal op uit de database en stel de status in op 'read'
     db.get("SELECT * FROM signals WHERE peerId = ? ORDER BY id DESC LIMIT 1", [peerId], (err, row) => {
       if (err) {
+        console.error('Error retrieving signal:', err.message); // Log the error
         return res.status(500).json({ error: 'Error retrieving signal' });
       }
 
@@ -68,7 +72,7 @@ export default async function handler(req, res) {
         const deleteStmt = db.prepare("DELETE FROM signals WHERE id = ?");
         deleteStmt.run(row.id, (err) => {
           if (err) {
-            console.error('Error deleting message:', err.message);
+            console.error('Error deleting message:', err.message); // Log the error
           }
         });
 
