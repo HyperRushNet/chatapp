@@ -61,7 +61,7 @@
       };
 
       try {
-        const response = await fetch('https://chatbackend-omega.vercel.app/api/offer?peerId=233', {
+        const response = await fetch('/api/offer?peerId=233', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -83,7 +83,7 @@
     // Function to fetch data from the server
     fetchDataBtn.addEventListener('click', async () => {
       try {
-        const response = await fetch(`https://chatbackend-omega.vercel.app/api/signal?peerId=233`, {
+        const response = await fetch(`/api/signal?peerId=233`, {
           method: 'GET',
         });
 
