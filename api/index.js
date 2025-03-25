@@ -1,5 +1,5 @@
 // In-memory opslag voor berichten per peer
-let signals = {}; 
+let signals = {};
 
 export default async function handler(req, res) {
   // Voeg CORS headers toe om verzoeken van andere domeinen toe te staan
@@ -20,6 +20,12 @@ export default async function handler(req, res) {
 
       // Sla het bericht op voor de peer in het geheugen
       signals[signalData.peerId] = signalData;
+
+      // Stel een timer in om het signaal na 60 seconden te verwijderen
+      setTimeout(() => {
+        delete signals[signalData.peerId];
+        console.log(`Signal voor peer ${signalData.peerId} is verwijderd na 60 seconden`);
+      }, 60000); // 60000 milliseconden = 60 seconden
 
       console.log(`Signal ontvangen voor ${signalData.peerId}: `, signalData);
 
