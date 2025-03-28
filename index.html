@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f1f1f1;
+        }
+
+        #messageBox {
+            width: 80%;
+            max-width: 600px;
+            height: 300px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #fff;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #messageInput, #usernameInput {
+            width: 80%;
+            max-width: 600px;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #sendMessageBtn {
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sendMessageBtn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Chat App</h1>
+
+    <!-- Box om berichten weer te geven -->
+    <div id="messageBox"></div>
+
+    <!-- Gebruikersnaam invoer -->
+    <input type="text" id="usernameInput" placeholder="Voer je naam in">
+
+    <!-- Bericht invoer -->
+    <input type="text" id="messageInput" placeholder="Voer een bericht in">
+
+    <!-- Verstuur bericht knop -->
+    <button id="sendMessageBtn">Verstuur Bericht</button>
+
+    <!-- Script voor de frontend functionaliteit -->
+    <script src="https://chatapp-git-main-hrn.vercel.app/api/hh.js"></script>
+
+    <script>
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const messageInput = document.getElementById('messageInput');
+        const messageBox = document.getElementById('messageBox');
+        const usernameInput = document.getElementById('usernameInput');
+
+        function getUsername() {
+            return usernameInput.value.trim() || 'Onbekend';
+        }
+
+        function updateMessageBox(message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${message.timestamp} - ${message.peerId}: ${message.username}: ${message.message}`;
+            messageBox.appendChild(messageElement);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+
+        sendMessageBtn.addEventListener('click', async () => {
+            const customMessage = messageInput.value.trim();
+            if (!customMessage) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const signal = {
+                peerId: "2000",
+                type: 'offer',
+                message: customMessage,
+                timestamp,
+                username: getUsername()
+            };
+
+            try {
+                // Aanroepen van de serverless functie (via /api/sendMessage)
+                const response = await fetch('/api/sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(signal),
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    updateMessageBox(responseData.data);
+                }
+            } catch (error) {
+                console.error('Fout bij verzenden:', error);
+            }
+        });
+    </script>
+
+</body>
+</html>
