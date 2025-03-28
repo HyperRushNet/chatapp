@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Applicatie</title>
     <style>
-        /* Simpele stijlen voor het berichtenscherm */
+        /* Stijl voor de berichtenbox */
         #messageBox {
             width: 100%;
             height: 300px;
             overflow-y: auto;
             border: 1px solid #ccc;
             margin-bottom: 20px;
+            padding: 10px;
         }
         .message {
             padding: 5px;
@@ -25,8 +26,10 @@
 <body>
     <h1>Berichten Verzenden</h1>
 
+    <!-- Berichtenbox -->
     <div id="messageBox"></div>
 
+    <!-- Formulier voor het invoeren van bericht en naam -->
     <div>
         <label for="usernameInput">Username:</label>
         <input type="text" id="usernameInput" placeholder="Voer je naam in">
@@ -43,16 +46,18 @@
         const messageBox = document.getElementById('messageBox');
         const usernameInput = document.getElementById('usernameInput');
 
+        // Functie om de gebruikersnaam op te halen
         function getUsername() {
             return usernameInput.value.trim() || 'Onbekend';
         }
 
+        // Functie om berichten toe te voegen aan de berichtenbox
         function updateMessageBox(message) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             messageElement.textContent = `${message.timestamp} - ${message.peerId}: ${message.username}: ${message.message}`;
             messageBox.appendChild(messageElement);
-            messageBox.scrollTop = messageBox.scrollHeight;
+            messageBox.scrollTop = messageBox.scrollHeight;  // Scroll naar beneden bij nieuw bericht
         }
 
         // Functie om berichten op te halen
@@ -61,7 +66,8 @@
                 const response = await fetch('/api/hh');
                 if (response.ok) {
                     const data = await response.json();
-                    data.data.forEach(updateMessageBox);  // Alle berichten tonen
+                    // Voeg alle berichten toe aan de messageBox
+                    data.data.forEach(updateMessageBox);
                 } else {
                     console.error('Fout bij ophalen van berichten');
                 }
@@ -77,7 +83,7 @@
 
             const timestamp = new Date().toLocaleTimeString();
             const signal = {
-                peerId: "2000",
+                peerId: "2000",  // Hardcoded peerId
                 type: 'offer',
                 message: customMessage,
                 timestamp,
@@ -93,8 +99,10 @@
 
                 if (response.ok) {
                     const responseData = await response.json();
-                    updateMessageBox(responseData.data); // Het nieuwe bericht toevoegen aan de berichtenbox
-                    messageInput.value = '';  // Input leegmaken
+                    updateMessageBox(responseData.data[responseData.data.length - 1]);  // Alleen het nieuwe bericht toevoegen
+                    messageInput.value = '';  // Maak het berichtinvoerveld leeg
+                } else {
+                    console.error('Fout bij verzenden van bericht');
                 }
             } catch (error) {
                 console.error('Fout bij verzenden:', error);
@@ -103,7 +111,6 @@
 
         // Bij het laden van de pagina, haal berichten op
         window.onload = fetchMessages;
-
     </script>
 </body>
 </html>
