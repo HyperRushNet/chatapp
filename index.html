@@ -3,74 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>Chat Applicatie</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f1f1f1;
-        }
-
+        /* Simpele stijlen voor het berichtenscherm */
         #messageBox {
-            width: 80%;
-            max-width: 600px;
+            width: 100%;
             height: 300px;
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #fff;
-            overflow-y: scroll;
+            overflow-y: auto;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            margin-bottom: 20px;
         }
-
-        #messageInput, #usernameInput {
-            width: 80%;
-            max-width: 600px;
-            padding: 10px;
-            margin: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .message {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
         }
-
-        #sendMessageBtn {
-            padding: 10px 20px;
-            margin-top: 10px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sendMessageBtn:hover {
-            background-color: #0056b3;
+        .message:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
+    <h1>Berichten Verzenden</h1>
 
-    <h1>Chat App</h1>
-
-    <!-- Box om berichten weer te geven -->
     <div id="messageBox"></div>
 
-    <!-- Gebruikersnaam invoer -->
-    <input type="text" id="usernameInput" placeholder="Voer je naam in">
-
-    <!-- Bericht invoer -->
-    <input type="text" id="messageInput" placeholder="Voer een bericht in">
-
-    <!-- Verstuur bericht knop -->
-    <button id="sendMessageBtn">Verstuur Bericht</button>
-
-    <!-- Script voor de frontend functionaliteit -->
-    <script src="https://chatapp-git-main-hrn.vercel.app/api/hh.js"></script>
+    <div>
+        <label for="usernameInput">Username:</label>
+        <input type="text" id="usernameInput" placeholder="Voer je naam in">
+    </div>
+    <div>
+        <label for="messageInput">Bericht:</label>
+        <input type="text" id="messageInput" placeholder="Voer bericht in">
+    </div>
+    <button id="sendMessageBtn">Verzend bericht</button>
 
     <script>
         const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -84,11 +49,28 @@
 
         function updateMessageBox(message) {
             const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
             messageElement.textContent = `${message.timestamp} - ${message.peerId}: ${message.username}: ${message.message}`;
             messageBox.appendChild(messageElement);
             messageBox.scrollTop = messageBox.scrollHeight;
         }
 
+        // Functie om berichten op te halen
+        async function fetchMessages() {
+            try {
+                const response = await fetch('/api/hh');
+                if (response.ok) {
+                    const data = await response.json();
+                    data.data.forEach(updateMessageBox);  // Alle berichten tonen
+                } else {
+                    console.error('Fout bij ophalen van berichten');
+                }
+            } catch (error) {
+                console.error('Fout bij ophalen van berichten:', error);
+            }
+        }
+
+        // Functie om een bericht te verzenden
         sendMessageBtn.addEventListener('click', async () => {
             const customMessage = messageInput.value.trim();
             if (!customMessage) return;
@@ -103,8 +85,7 @@
             };
 
             try {
-                // Aanroepen van de serverless functie (via /api/sendMessage)
-                const response = await fetch('/api/hh.js', {
+                const response = await fetch('/api/hh', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(signal),
@@ -112,13 +93,17 @@
 
                 if (response.ok) {
                     const responseData = await response.json();
-                    updateMessageBox(responseData.data);
+                    updateMessageBox(responseData.data); // Het nieuwe bericht toevoegen aan de berichtenbox
+                    messageInput.value = '';  // Input leegmaken
                 }
             } catch (error) {
                 console.error('Fout bij verzenden:', error);
             }
         });
-    </script>
 
+        // Bij het laden van de pagina, haal berichten op
+        window.onload = fetchMessages;
+
+    </script>
 </body>
 </html>
