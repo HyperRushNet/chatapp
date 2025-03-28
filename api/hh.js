@@ -1,44 +1,36 @@
-const sendMessageBtn = document.getElementById('sendMessageBtn');
-const messageInput = document.getElementById('messageInput');
-const messageBox = document.getElementById('messageBox');
-const usernameInput = document.getElementById('usernameInput');
+// api/sendMessage.js
 
-function getUsername() {
-    return usernameInput.value.trim() || 'Onbekend';
-}
+export default async function handler(req, res) {
+    if (req.method === 'POST') {
+        // Haal de gegevens uit de request body
+        const { message, timestamp, peerId, username } = req.body;
 
-function updateMessageBox(message) {
-    const messageElement = document.createElement('div');
-    messageElement.textContent = `${message.timestamp} - ${message.peerId}: ${message.username}: ${message.message}`;
-    messageBox.appendChild(messageElement);
-    messageBox.scrollTop = messageBox.scrollHeight;
-}
+        // Verzend het bericht naar de externe API
+        try {
+            const response = await fetch('https://chatapp-git-main-hrn.vercel.app/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    peerId: peerId || '2000',
+                    type: 'offer',
+                    message: message || 'Hallo wereld van PC',
+                    timestamp: timestamp || '00:00',
+                    username: username || 'Onbekend'
+                }),
+            });
 
-sendMessageBtn.addEventListener('click', async () => {
-    const customMessage = messageInput.value.trim();
-    if (!customMessage) return;
-
-    const timestamp = new Date().toLocaleTimeString();
-    const signal = {
-        peerId: "2000",
-        type: 'offer',
-        message: customMessage,
-        timestamp,
-        username: getUsername()
-    };
-
-    try {
-        const response = await fetch('/api/sendMessage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(signal),
-        });
-
-        if (response.ok) {
-            const responseData = await response.json();
-            updateMessageBox(responseData.data);
+            if (response.ok) {
+                const responseData = await response.json();
+                res.status(200).json({ data: responseData.data });
+            } else {
+                res.status(response.status).json({ error: 'API request failed' });
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            res.status(500).json({ error: 'Internal server error' });
         }
-    } catch (error) {
-        console.error('Fout bij verzenden:', error);
+    } else {
+        // Handle other HTTP methods
+        res.status(405).json({ error: 'Method Not Allowed' });
     }
-});
+}
