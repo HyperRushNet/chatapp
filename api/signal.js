@@ -1,46 +1,63 @@
-// In-memory opslag voor berichten per peer
-let signals = {}; 
+// api/signal.js
+const signals = new Map(); // In-memory opslag voor signalen
+const SIGNAL_TTL = 60 * 1000; // 1 minuut TTL voor signalen
 
-export default async function handler(req, res) {
-  // Voeg CORS headers toe om verzoeken van andere domeinen toe te staan
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Dit staat verzoeken van elke domein toe
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); // Sta GET en POST-methoden toe
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Sta de Content-Type header toe
+// Helper om oude signalen te verwijderen
+function cleanupSignals() {
+  const now = Date.now();
+  for (const [key, signal] of signals) {
+    if (now - signal.timestamp > SIGNAL_TTL) {
+      signals.delete(key);
+    }
+  }
+}
 
-  // Als de HTTP-methode OPTIONS is, geef dan een lege reactie terug
+module.exports = (req, res) => {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method === 'POST') {
-    // Ontvang bericht van een peer
-    try {
-      const signalData = req.body;
+    const { peerId, controllerId, type, message, timestamp } = req.body;
 
-      // Sla het bericht op voor de peer in het geheugen
-      signals[signalData.peerId] = signalData;
-
-      console.log(`Signal ontvangen voor ${signalData.peerId}: `, signalData);
-
-      res.status(200).json({ message: 'Signal ontvangen', data: signalData });
-    } catch (error) {
-      res.status(500).json({ error: 'Fout bij het verwerken van signalen' });
+    if (!peerId || !controllerId || !type || !message || !timestamp) {
+      return res.status(400).json({ error: 'Ontbrekende velden' });
     }
-  } else if (req.method === 'GET') {
-    // Haal het laatste signaal op voor een bepaalde peer
-    try {
-      const { peerId } = req.query;
 
-      if (signals[peerId]) {
-        res.status(200).json({ signal: signals[peerId] }); // Stuur het signaal terug
-      } else {
-        res.status(200).json({ message: 'Geen signalen voor deze peer' });
-      }
-    } catch (error) {
-      res.status(500).json({ error: 'Fout bij het ophalen van signaal' });
-    }
-  } else {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    // Unieke sleutel voor elk signaal
+    const key = `${peerId}:${controllerId}:${type}`;
+    signals.set(key, { peerId, controllerId, type, message, timestamp });
+
+    // Schoon oude signalen op
+    cleanupSignals();
+
+    return res.status(200).json({ success: true });
   }
-}
+
+  if (req.method === 'GET') {
+    const { peerId, controllerId } = req.query;
+
+    if (!peerId) {
+      return res.status(400).json({ error: 'peerId vereist' });
+    }
+
+    cleanupSignals();
+    const matchingSignals = [];
+
+    // Haal signalen op die overeenkomen met peerId en optioneel controllerId
+    for (const [key, signal] of signals) {
+      if (signal.peerId === peerId && (!controllerId || signal.controllerId === controllerId)) {
+        matchingSignals.push({ controllerId: signal.controllerId, type: signal.type, message: signal.message, timestamp: signal.timestamp });
+      }
+    }
+
+    return res.status(200).json(matchingSignals);
+  }
+
+  return res.status(405).json({ error: 'Methode niet toegestaan' });
+};
