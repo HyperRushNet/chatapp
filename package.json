@@ -1,18 +1,16 @@
 {
-  "name": "chatapp",
+  "name": "webrtc-signaling-server",
   "version": "1.0.0",
-  "description": "A chat application",
-  "main": "index.js",
+  "description": "Signaling server for WebRTC controller and receiver",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "vercel dev"
+    "start": "vercel dev"
   },
-  "dependencies": {
-    "sqlite3": "^5.0.0",
-    "express": "^4.17.1",
-    "cors": "^2.8.5"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "vercel": "^24.0.0"
+    "vercel": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
